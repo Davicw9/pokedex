@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { Heart } from 'lucide-react';
 import SearchBar from './components/SearchBar';
 import PokemonCard, { type Pokemon } from './components/PokemonCard';
 import PokemonDetails from './components/PokemonDetails';
@@ -14,13 +15,39 @@ const App: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [displayedPokemon, setDisplayedPokemon] = useState<Pokemon[]>([]);
 
+  const [favorites, setFavorites] = useState<number[]>(() => {
+    const saved = localStorage.getItem('pokemonFavorites');
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
+
+  useEffect(() => {
+    localStorage.setItem('pokemonFavorites', JSON.stringify(favorites));
+  }, [favorites]);
+
+  const toggleFavorite = (e: React.MouseEvent | null, id: number) => {
+    if (e) e.stopPropagation();
+    setFavorites(prev => 
+      prev.includes(id) ? prev.filter(f => f !== id) : [...prev, id]
+    );
+  };
+
   const ITEMS_PER_PAGE = 20;
 
   const filteredPokemon = useMemo(() => {
-    return allPokemonBase.filter(p => 
-      p.name.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-  }, [allPokemonBase, searchQuery]);
+    return allPokemonBase.filter(p => {
+      const matchSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase());
+      if (!matchSearch) return false;
+      
+      if (showFavoritesOnly) {
+        const idMatch = p.url.match(/\/(\d+)\/$/);
+        const id = idMatch ? parseInt(idMatch[1]) : 0;
+        if (!favorites.includes(id)) return false;
+      }
+      
+      return true;
+    });
+  }, [allPokemonBase, searchQuery, showFavoritesOnly, favorites]);
 
   const totalPages = Math.ceil(filteredPokemon.length / ITEMS_PER_PAGE);
   const [isLoading, setIsLoading] = useState(true);
@@ -84,16 +111,39 @@ const App: React.FC = () => {
         </header>
 
         {selectedPokemon ? (
-          <PokemonDetails pokemon={selectedPokemon} onBack={() => setSelectedPokemon(null)} />
+          <PokemonDetails 
+            pokemon={selectedPokemon} 
+            isFavorite={favorites.includes(selectedPokemon.id)}
+            onToggleFavorite={toggleFavorite}
+            onBack={() => setSelectedPokemon(null)} 
+          />
         ) : (
           <div className="animate-fade-in-up">
-            <SearchBar 
-              value={searchQuery} 
-              onChange={(val) => {
-                setSearchQuery(val);
-                setCurrentPage(1);
-              }} 
-            />
+            <div className="flex flex-col sm:flex-row gap-4 max-w-3xl mx-auto mb-10 items-center">
+              <div className="flex-1 w-full">
+                <SearchBar 
+                  value={searchQuery} 
+                  onChange={(val) => {
+                    setSearchQuery(val);
+                    setCurrentPage(1);
+                  }} 
+                />
+              </div>
+              <button 
+                onClick={() => {
+                  setShowFavoritesOnly(!showFavoritesOnly);
+                  setCurrentPage(1);
+                }}
+                className={`w-full sm:w-auto px-6 py-[1.1rem] rounded-2xl flex items-center justify-center gap-3 font-bold transition-all shadow-[0_4px_20px_rgb(0,0,0,0.05)] border-2 ${
+                  showFavoritesOnly 
+                    ? 'bg-red-50 text-red-500 border-red-200' 
+                    : 'bg-white text-slate-500 border-transparent hover:border-slate-200'
+                }`}
+              >
+                <Heart className={`w-5 h-5 ${showFavoritesOnly ? 'fill-red-500 text-red-500' : 'text-slate-400'}`} />
+                Favoritos {favorites.length > 0 && `(${favorites.length})`}
+              </button>
+            </div>
 
             {isLoading ? (
               <div className="flex justify-center items-center py-20">
@@ -105,7 +155,9 @@ const App: React.FC = () => {
                   {displayedPokemon.map((pokemon) => (
                     <PokemonCard 
                       key={pokemon.id} 
-                      pokemon={pokemon} 
+                      pokemon={pokemon}
+                      isFavorite={favorites.includes(pokemon.id)}
+                      onToggleFavorite={toggleFavorite}
                       onClick={setSelectedPokemon} 
                     />
                   ))}

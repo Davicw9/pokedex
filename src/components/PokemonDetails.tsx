@@ -1,9 +1,11 @@
 import React from 'react';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Heart } from 'lucide-react';
 import { type Pokemon, typeColors } from './PokemonCard';
 
 interface PokemonDetailsProps {
   pokemon: Pokemon;
+  isFavorite: boolean;
+  onToggleFavorite: (e: React.MouseEvent | null, id: number) => void;
   onBack: () => void;
 }
 
@@ -19,7 +21,7 @@ const formatStatName = (name: string) => {
   }
 };
 
-const PokemonDetails: React.FC<PokemonDetailsProps> = ({ pokemon, onBack }) => {
+const PokemonDetails: React.FC<PokemonDetailsProps> = ({ pokemon, isFavorite, onToggleFavorite, onBack }) => {
   const imageUrl = pokemon.sprites.other['official-artwork'].front_default;
   const mainType = pokemon.types[0]?.type.name || 'normal';
   const formattedId = `#${pokemon.id.toString().padStart(3, '0')}`;
@@ -48,7 +50,16 @@ const PokemonDetails: React.FC<PokemonDetailsProps> = ({ pokemon, onBack }) => {
           
           {/* Left Column (Image & Types) */}
           <div className="flex-1 flex flex-col items-center">
-            <span className="text-2xl font-black text-slate-300 mb-2">{formattedId}</span>
+            <div className="flex items-center gap-3 mb-2">
+              <span className="text-2xl font-black text-slate-300">{formattedId}</span>
+              <button 
+                onClick={(e) => onToggleFavorite(e, pokemon.id)}
+                className="p-2 rounded-full hover:bg-white/40 transition-colors"
+                title={isFavorite ? "Remover dos favoritos" : "Adicionar aos favoritos"}
+              >
+                <Heart className={`w-8 h-8 transition-colors ${isFavorite ? 'fill-red-500 text-red-500' : 'text-slate-300 hover:text-red-400'}`} />
+              </button>
+            </div>
             <h2 className="text-4xl md:text-5xl font-extrabold text-slate-800 mb-6 text-center">{capitalizedName}</h2>
             
             <div className="w-64 h-64 md:w-80 md:h-80 drop-shadow-2xl animate-fade-in">

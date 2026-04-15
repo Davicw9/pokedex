@@ -1,4 +1,5 @@
 import React from 'react';
+import { Heart } from 'lucide-react';
 
 export interface PokemonType {
   type: {
@@ -38,6 +39,8 @@ export interface Pokemon {
 
 interface PokemonCardProps {
   pokemon: Pokemon;
+  isFavorite: boolean;
+  onToggleFavorite: (e: React.MouseEvent, id: number) => void;
   onClick: (pokemon: Pokemon) => void;
 }
 
@@ -62,7 +65,7 @@ export const typeColors: Record<string, string> = {
   fairy: 'bg-pink-300 text-gray-900',
 };
 
-const PokemonCard: React.FC<PokemonCardProps> = ({ pokemon, onClick }) => {
+const PokemonCard: React.FC<PokemonCardProps> = ({ pokemon, isFavorite, onToggleFavorite, onClick }) => {
   const imageUrl = pokemon.sprites.other['official-artwork'].front_default;
   const mainType = pokemon.types[0]?.type.name || 'normal';
 
@@ -76,6 +79,14 @@ const PokemonCard: React.FC<PokemonCardProps> = ({ pokemon, onClick }) => {
       style={{ borderBottomColor: `var(--type-${mainType}, #CBD5E1)` }}
     >
       <div className="absolute inset-0 bg-gradient-to-br from-white/40 to-transparent z-0 pointer-events-none" />
+
+      <button 
+        onClick={(e) => onToggleFavorite(e, pokemon.id)}
+        className="absolute top-4 left-4 z-20 p-2 rounded-full hover:bg-white/40 transition-colors"
+        aria-label={isFavorite ? "Remover dos favoritos" : "Adicionar aos favoritos"}
+      >
+        <Heart className={`w-6 h-6 transition-colors ${isFavorite ? 'fill-red-500 text-red-500' : 'text-slate-400'}`} />
+      </button>
 
       <span className="absolute top-4 right-4 text-sm font-black text-slate-300 z-10 group-hover:text-slate-400 transition-colors">
         {formattedId}
